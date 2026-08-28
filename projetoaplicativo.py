@@ -12,11 +12,14 @@ CSV_URL = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv"
 FORM_URL = "https://google.com"
 
 def carregar_dados():
+    import io
     try:
-        df = pd.read_csv(CSV_URL)
+        # Usando requests para furar o bloqueio de DNS do servidor
+        resposta = requests.get(CSV_URL)
+        df = pd.read_csv(io.StringIO(resposta.text))
+        
         df = df.dropna(how='all', axis=0)
         df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-        # Trata o ano para garantir que seja exibido como texto/inteiro sem .0
         if 'ANO' in df.columns:
             df['ANO'] = df['ANO'].fillna(0).astype(int).astype(str)
         return df
