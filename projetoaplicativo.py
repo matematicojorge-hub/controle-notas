@@ -6,18 +6,19 @@ from datetime import datetime
 # Configuração da página e identidade visual do Exército
 st.set_page_config(page_title="Sistema SCRG", page_icon="🪖", layout="wide")
 
-# URL de comunicação com o seu Google Sheets
+# URLs de comunicação com a planilha e o formulário do Google
 SHEET_ID = "1xMomtKYhKIlNRwd7Iy6jRs5hW-4xSHcrYEJN-IlqL0s"
-CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv"
-FORM_URL = f"https://google.com" # Opcional para gravação
+CSV_URL = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv"
+FORM_URL = "https://google.com"
 
-# Função para carregar os dados em tempo real da nuvem
 def carregar_dados():
     try:
         df = pd.read_csv(CSV_URL)
-        # Limpeza básica de colunas extras vazias que o Sheets gera
         df = df.dropna(how='all', axis=0)
         df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+        # Trata o ano para garantir que seja exibido como texto/inteiro sem .0
+        if 'ANO' in df.columns:
+            df['ANO'] = df['ANO'].fillna(0).astype(int).astype(str)
         return df
     except Exception as e:
         st.error(f"Erro ao conectar com a planilha mãe: {e}")
@@ -34,18 +35,16 @@ if senha == "nota2026":
     st.title("📋 Sistema Unificado de Controle de Notas - SCRG")
     st.write(f"Conectado com sucesso no perfil: **{perfil}**")
     
-    # Exibir resumo estatístico das 216 notas históricas
     total_notas = len(df_notas)
     st.metric(label="Total de Notas Registradas na Nuvem", value=total_notas)
     
-    # Aba de Visualização dos Dados Antigos
     tab1, tab2 = st.tabs(["🔎 Consultar Notas (Nuvem)", "➕ Lançar Nova Nota"])
     
     with tab1:
         st.subheader("Registros Sincronizados em Tempo Real")
-        # Filtro por ano dinâmico (Trava A-2 automática)
-        ano_atual = datetime.now().year
-        ano_filtro = st.selectbox("Filtrar por Ano de Referência:", sorted(df_notas['ANO'].unique(), reverse=True))
+        anos_disponiveis = sorted(df_notas['ANO'].unique(), reverse=True)
+        if "0" in anos_disponiveis: anos_disponiveis.remove("0")
+        ano_filtro = st.selectbox("Filtrar por Ano de Referência:", anos_disponiveis)
         
         df_filtrado = df_notas[df_notas['ANO'] == ano_filtro]
         st.dataframe(df_filtrado, use_container_width=True)
@@ -55,11 +54,11 @@ if senha == "nota2026":
         if perfil == "OD - Ordenador de Despesas":
             st.warning("Seu perfil de Ordenador de Despesas possui apenas permissão de leitura e visto.")
         else:
-            with st.form("nova_nota_form"):
+            with st.form("nova_nota_form", clear_on_submit=True):
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     nf = st.text_input("Número da Nota Fiscal (NF):")
-                    ano = st.number_input("Ano de Referência:", min_value=2020, max_value=ano_atual, value=ano_atual)
+                    ano = st.text_input("Ano de Referência:", value=str(datetime.now().year))
                     ug = st.text_input("UG Emissora:")
                 with col2:
                     ne = st.text_input("Nota de Empenho (NE):")
@@ -71,8 +70,32 @@ if senha == "nota2026":
                     visto = st.text_input("Visto / Responsável pelo Registro:")
                 
                 enviar = st.form_submit_button("Salvar Registro na Nuvem")
+                
                 if enviar:
-                    st.success("Nota enviada para processamento! Para salvar diretamente via API pública sem chaves, integramos ao Google Forms correspondente à planilha.")
+                    if not nf or not empresa:
+                        st.error("Por favor, preencha os campos obrigatórios (NF e Empresa).")
+                    else:
+                        # Mapeamento exato das caixas do Google Forms (ordem de criação)
+                        dados_envio = {
+                            "entry.921319728": nf,       # Campo NF
+                            "entry.1741530931": ano,     # Campo ANO
+                            "entry.2069730598": ug,      # Campo UG
+                            "entry.604113110": ne,       # Campo NE
+                            "entry.533276632": empresa,  # Campo EMPRESA
+                            "entry.1011559868": np,      # Campo NP
+                            "entry.25471464": valor,     # Campo VALOR
+                            "entry.1691238965": data,    # Campo DATA
+                            "entry.2057630768": visto     # Campo VISTO
+                        }
+                        try:
+                            resposta = requests.post(FORM_URL, data=dados_envio)
+                            if resposta.status_code == 200:
+                                st.success("Nota salva com sucesso na nuvem! Atualize a página de consulta para ver o novo registro.")
+                                st.balloons()
+                            else:
+                                st.error("Erro temporário ao enviar para o banco de dados. Tente novamente.")
+                        except Exception as e:
+                            st.error(f"Erro de conexão: {e}")
 
 else:
     if senha != "":
