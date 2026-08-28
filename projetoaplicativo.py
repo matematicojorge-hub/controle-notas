@@ -11,6 +11,7 @@ SHEET_ID = "1xMomtKYhKIlNRwd7Iy6jRs5hW-4xSHcrYEJN-IlqL0s"
 CSV_URL = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=dados"
 FORM_URL = "https://google.com"
 
+
 def carregar_dados():
     import io
     try:
