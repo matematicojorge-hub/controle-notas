@@ -7,7 +7,7 @@ from datetime import datetime
 # Configuração da página e identidade visual do Exército
 st.set_page_config(page_title="Sistema SCRG", page_icon="🪖", layout="wide")
 
-# Link de comunicação direto e travado na aba certa
+# Link de comunicação direto e travado na aba certa (Totalmente Corrigido)
 SHEET_ID = "1xMomtKYhKIlNRwd7Iy6jRs5hW-4xSHcrYEJN-IlqL0s"
 CSV_URL = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=dados"
 FORM_URL = "https://google.com"
@@ -37,7 +37,7 @@ perfil = st.sidebar.selectbox(
 )
 senha = st.sidebar.text_input("Digite a senha de acesso:", type="password")
 
-# Definição simples das senhas para cada setor
+# Definição simples e direta das senhas por setor
 SENHAS_DIRETAS = {
     "SCRG": "nota2026",
     "Setor Financeiro": "fin2026",
