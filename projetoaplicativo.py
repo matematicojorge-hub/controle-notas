@@ -100,4 +100,4 @@ if senha == "nota2026":
 else:
     if senha != "":
         st.sidebar.error("Senha incorreta. Tente novamente.")
-    st.info("Insira a senha na barra lateral esquerda para visualizar o banco de dados das notas fiscais.")
+    st.info("Insira a senha na barra lateral esquerda para visualizar o banco de dados das notas fiscais.")# atualizado
